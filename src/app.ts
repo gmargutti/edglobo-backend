@@ -1,6 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import routes from './Routes';
+
+dotenv.config({
+  path: process.env.NODE_ENV === 'production' ? '.env' : '.example.env',
+});
 
 class App {
     public server: express.Express
