@@ -3,6 +3,7 @@ import {
 } from 'express';
 import NewsController from '../Controllers/NewsController';
 import app from '../app';
+import News from '../@types/News';
 
 const router = Router();
 
@@ -22,6 +23,40 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const controller = new NewsController(app.Repositories.NewsRepository);
     const news = await controller.read();
     return res.json(news);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.get('/:newsId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { newsId } = req.params;
+    const controller = new NewsController(app.Repositories.NewsRepository);
+    const news = await controller.read(newsId);
+    return res.json(news);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.put('/:newsId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { newsId } = req.params;
+    const news = { ...req.body } as News;
+    const controller = new NewsController(app.Repositories.NewsRepository);
+    const updated = await controller.update(newsId, news);
+    return res.json(updated);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.delete('/:newsId', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { newsId } = req.params;
+    const controller = new NewsController(app.Repositories.NewsRepository);
+    const deleted = await controller.delete(newsId);
+    return res.json(deleted);
   } catch (err) {
     return next(err);
   }
