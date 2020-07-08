@@ -8,7 +8,7 @@ export default function errorMiddleware(
   res: Response,
   next: NextFunction,
 ) {
-  if (err.name === 'CUSTOM_ERROR') {
+  if (err.name === 'CUSTOM_ERROR' || 'CastError') {
     return res.status(400).json({ message: err.message });
   }
   return res.status(500).json({ message: 'Não foi possível concluir a requisição!' });

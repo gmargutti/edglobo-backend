@@ -4,28 +4,30 @@ import NewsRepositoryMongo from '../Repositories/NewsRepositories/NewsRepository
 import INewsRepository from '../Repositories/NewsRepositories/INewsRepository';
 import News from '../@types/News';
 import NewsMongo from '../Models/Mongo/NewsMongo';
+import NewsController from '../Controllers/NewsController';
 
 dotenv.config({
   path: '.env.test',
 });
+
+const repo = new NewsRepositoryMongo();
+const controller = new NewsController(repo);
 
 beforeAll(async () => {
   await mongoose.connect(process.env.MONGO_CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
 });
 
 test('Deve dicionar uma Notícia ao banco de dados utilizando o NewsRepository', async () => {
-  const repo: INewsRepository = new NewsRepositoryMongo();
   const news: News = {
     conteudo: 'Primeira publicação feita em 04/06/2020',
     titulo: 'Publicação de Notícias no MongoDB',
     dataPublicacao: new Date(),
   };
-  const created = await repo.create(news);
+  const created = await controller.create(news);
   expect(created).toBeInstanceOf(NewsMongo);
 });
 
 test('Deve falhar ao adicionar uma Notícia faltando alguma das propriedades utilizando o NewsRepository', async () => {
-  const repo: INewsRepository = new NewsRepositoryMongo();
   const news: News = {
     conteudo: '',
     titulo: 'Não Informado',
@@ -33,7 +35,7 @@ test('Deve falhar ao adicionar uma Notícia faltando alguma das propriedades uti
   };
   let error;
   try {
-    const createFail = await repo.create(news);
+    const createFail = await controller.create(news);
   } catch (err) {
     error = err;
   }
@@ -42,33 +44,31 @@ test('Deve falhar ao adicionar uma Notícia faltando alguma das propriedades uti
 });
 
 test('Deve atualizar as propriedades da Notícia no banco de dados utilizando o NewsRepository', async () => {
-  const repo = new NewsRepositoryMongo();
   const news: News = {
     conteudo: 'Deve Ser Alterado',
     titulo: 'Alteração',
     dataPublicacao: new Date(),
   };
 
-  const created = await repo.create(news);
+  const created = await controller.create(news);
   const toUpdate = {
     ...news,
     conteudo: 'Foi atualizado!',
   };
-  const updated = await repo.update(created.id, toUpdate);
+  const updated = await controller.update(`${created.id}`, toUpdate);
   expect(updated.conteudo).toBe('Foi atualizado!');
 });
 
 test('Deve falhar ao tentar atualizar uma notícia por conta de o ID informado estar inválido', async () => {
-  const repo = new NewsRepositoryMongo();
   const news: News = {
     titulo: 'Inexistente',
     conteudo: 'Não foi cadastrado',
     dataPublicacao: new Date(),
   };
-  const created = await repo.create(news);
+  const created = await controller.create(news);
   let error;
   try {
-    const updated = await repo.update(`${created.id}1`, news);
+    const updated = await controller.update(`${created.id}1`, news);
   } catch (err) {
     error = err;
   }
@@ -76,8 +76,25 @@ test('Deve falhar ao tentar atualizar uma notícia por conta de o ID informado e
   expect({ message, name }).toStrictEqual({ message: 'O ID informado é inválido!', name: 'CastError' });
 });
 
+test('Deve falhar ao tentar atualizar uma notícia por de um dos campos estarem vazios', async () => {
+  const news: News = {
+    conteudo: 'Conteudo',
+    titulo: 'Titulo',
+    dataPublicacao: new Date(),
+  };
+  const created = await controller.create(news);
+  let error;
+  try {
+    const updated = await controller.update(`${created.id}`, { ...news, titulo: '' });
+    console.log(updated);
+  } catch (err) {
+    error = err;
+  }
+  const { message, name } = error;
+  expect({ message, name }).toStrictEqual({ message: 'Não foi possível inserir a Notícia no banco de dados', name: 'CUSTOM_ERROR' });
+});
+
 test('Deve falhar ao tentar atualizar uma notícia por conta de o ID informado não existir no banco de dados', async () => {
-  const repo = new NewsRepositoryMongo();
   const news = {
     titulo: 'Inexistente',
     conteudo: 'Não foi cadastrado',
@@ -86,7 +103,7 @@ test('Deve falhar ao tentar atualizar uma notícia por conta de o ID informado n
   const randomId = mongoose.Types.ObjectId().toHexString();
   let error;
   try {
-    const updated = await repo.update(randomId, news);
+    const updated = await controller.update(randomId, news);
   } catch (err) {
     error = err;
   }
@@ -95,25 +112,23 @@ test('Deve falhar ao tentar atualizar uma notícia por conta de o ID informado n
 });
 
 test('Deve remover uma notícia pré-existente utilizando o NewsRepository', async () => {
-  const repo = new NewsRepositoryMongo();
   const news: News = {
     titulo: 'Deletar',
     conteudo: 'Teste Delete Notícia',
     dataPublicacao: new Date(),
   };
 
-  const created = await repo.create(news);
-  const deleted = await repo.delete(created.id);
+  const created = await controller.create(news);
+  const deleted = await controller.delete(`${created.id}`);
   expect(deleted).toBeInstanceOf(NewsMongo);
 });
 
 test('Deve falhar ao tentar remover uma notícia por conta de o ID informado ser incorreto', async () => {
-  const repo = new NewsRepositoryMongo();
   const randomId = mongoose.Types.ObjectId().toHexString();
 
   let error;
   try {
-    const deleted = await repo.delete(randomId);
+    const deleted = await controller.delete(randomId);
   } catch (err) {
     error = err;
   }
@@ -122,12 +137,11 @@ test('Deve falhar ao tentar remover uma notícia por conta de o ID informado ser
 });
 
 test('Deve falhar ao tentar remover uma notícia informando um ID inválido', async () => {
-  const repo = new NewsRepositoryMongo();
   const id = '123456';
 
   let error;
   try {
-    const deleted = await repo.delete(id);
+    const deleted = await controller.delete(id);
   } catch (err) {
     error = err;
   }
@@ -136,33 +150,28 @@ test('Deve falhar ao tentar remover uma notícia informando um ID inválido', as
 });
 
 test('Deve retornar uma lista contendo todas as notícias do banco de dados', async () => {
-  const repo = new NewsRepositoryMongo();
-  const news = await repo.read();
+  const news = await controller.read();
   expect(news).toBeInstanceOf(Array);
 });
 
 test('Deve retornar um único registro correspondente ao ID informado', async () => {
-  const repo = new NewsRepositoryMongo();
-
   const news: News = {
     titulo: 'Leitura',
     conteudo: 'Leitura de uma única notícia',
     dataPublicacao: new Date(),
   };
 
-  const created = await repo.create(news);
-  const read = await repo.read(created.id);
+  const created = await controller.create(news);
+  const read = await controller.read(`${created.id}`);
   expect(read).toBeInstanceOf(NewsMongo);
 });
 
 test('Deve falhar ao tentar retornar uma notícia por conta do ID inválido', async () => {
-  const repo = new NewsRepositoryMongo();
-
   const id = '12346';
 
   let error;
   try {
-    const read = await repo.read(id);
+    const read = await controller.read(id);
   } catch (err) {
     error = err;
   }
@@ -172,13 +181,11 @@ test('Deve falhar ao tentar retornar uma notícia por conta do ID inválido', as
 });
 
 test('Deve falhar ao tentar retornar uma notícia por conta de não existir nenhuma com o ID informado', async () => {
-  const repo = new NewsRepositoryMongo();
-
   const randomId = mongoose.Types.ObjectId().toHexString();
 
   let error;
   try {
-    const read = await repo.read(randomId);
+    const read = await controller.read(randomId);
   } catch (err) {
     error = err;
   }
