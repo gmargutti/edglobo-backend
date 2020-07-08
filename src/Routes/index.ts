@@ -14,8 +14,6 @@ router.use(AuthMiddleware);
 
 router.use('/news', NewsRoutes);
 
-router.get('/hello', (req: Request, res: Response) => res.json({ hello: 'world' }));
-
 router.use(errorMiddleware);
 
 export default router;
