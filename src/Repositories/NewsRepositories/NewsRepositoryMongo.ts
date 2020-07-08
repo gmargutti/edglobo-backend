@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import INewsRepository from './INewsRepository';
 import News from '../../@types/News';
 import NewsMongoModel, { NewsMongo } from '../../Models/Mongo/NewsMongo';
@@ -44,21 +43,31 @@ export default class NewsRepositoryMongo implements INewsRepository {
 
   public async update(newsId: string, news: News): Promise<News> {
     try {
-      const updated = await NewsMongoModel.findByIdAndUpdate(newsId, news, { new: true });
+      const updated = await NewsMongoModel.findById(newsId) as NewsMongo;
 
       if (!updated) {
         const error = new Error('Não foi possível encontrar uma notícia com o ID informado');
         error.name = 'CUSTOM_ERROR';
         throw error;
       }
+
+      updated.conteudo = news.conteudo;
+      updated.titulo = news.titulo;
+
+      await updated.save();
       return updated;
     } catch (err) {
       if (err.name === 'CastError') {
         const error = new Error('O ID informado é inválido!');
         error.name = 'CastError';
         throw error;
-      } else {
+      } else if (err.name === 'CUSTOM_ERROR') {
         throw err;
+      } else {
+        const error = new Error();
+        error.name = 'CUSTOM_ERROR';
+        error.message = 'Não foi possível inserir a Notícia no banco de dados';
+        throw error;
       }
     }
   }
