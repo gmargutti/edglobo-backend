@@ -1,0 +1,18 @@
+version: '3.4'
+
+services:
+  edglobo-backend:
+    image: edglobo-backend
+    build: .
+    environment:
+      NODE_ENV: production
+      MONGO_CONNECTION_STRING: mongodb://edglobo-mongo:27017/news
+      JWT_SECRET: JYNPWafV7LacHozjjvcS
+    ports:
+      - 3333:3333
+    depends_on: 
+      - edglobo-mongo
+  edglobo-mongo:
+    image: mongo:3.6.18-xenial
+    ports:
+      - 27017:27017
