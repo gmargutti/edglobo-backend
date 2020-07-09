@@ -5,11 +5,11 @@ Esse projeto está dividido em duas partes e a parte do frontend está disponív
 
 ### Ferramentas Utilizadas
 
-Docker - Containers
-Node.js - Servidor
-Express - Framework Web
-Jest - Framework Testes
-MongoDB - Banco de Dados não-relacional
+Docker - Containers<br/>
+Node.js - Servidor<br/>
+Express - Framework Web<br/>
+Jest - Framework Testes<br/>
+MongoDB - Banco de Dados não-relacional<br/>
 
 ### Instalação
 
